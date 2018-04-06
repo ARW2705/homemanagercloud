@@ -1,14 +1,27 @@
 {
   "name": "homemanagercloud",
-  "version": "0.0.0",
+  "version": "1.0.0",
+  "description": "Cloud server for Home Manager",
   "private": true,
   "scripts": {
     "start": "node ./bin/www"
   },
   "dependencies": {
+    "assert": "^1.4.1",
+    "bluebird": "^3.5.1",
+    "body-parser": "^1.18.2",
     "cookie-parser": "~1.4.3",
     "debug": "~2.6.9",
     "express": "~4.16.0",
-    "morgan": "~1.9.0"
+    "jsonwebtoken": "^8.2.1",
+    "mongodb": "^3.0.5",
+    "mongoose": "^5.0.13",
+    "morgan": "~1.9.0",
+    "passport": "^0.4.0",
+    "passport-jwt": "^4.0.0",
+    "passport-local": "^1.0.0",
+    "passport-local-mongoose": "^5.0.0",
+    "socket.io": "^2.1.0",
+    "socketio-jwt": "^4.5.0"
   }
 }
