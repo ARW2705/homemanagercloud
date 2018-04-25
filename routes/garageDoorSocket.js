@@ -18,7 +18,6 @@ const garageDoorSocket = io => {
           io.emit('garage-door-status-changed', {data: update});
         }, err => socket.emit('error', {error: err}))
         .catch(err => socket.emit('error', {error: err}));
-      });
     });
 
     // client socket disconnect

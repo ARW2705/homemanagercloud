@@ -20,6 +20,6 @@ garageDoorRouter.route('/')
         res.json(status[0]);
       }, err => next(err))
       .catch(err => next(err));
-  }));
+  });
 
 module.exports = garageDoorRouter;
