@@ -5,9 +5,6 @@ const LocalStrategy = require('passport-local').Strategy;
 const JwtStrategy = require('passport-jwt').Strategy;
 const ExtractJwt = require('passport-jwt').ExtractJwt;
 const jwt = require('jsonwebtoken');
-const https = require('https');
-const bodyParser = require('body-parser');
-const mongoose = require('mongoose');
 
 const User = require('./models/user');
 const TOKEN_KEY = process.env.TOKEN_KEY;
