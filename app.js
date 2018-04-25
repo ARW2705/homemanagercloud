@@ -1,5 +1,7 @@
 'use strict';
 
+const api_version = "api_v1.0.0";
+
 const express = require('express');
 const path = require('path');
 const favicon = require('serve-favicon');
@@ -8,9 +10,7 @@ const bodyParser = require('body-parser');
 const mongoose = require('mongoose');
 mongoose.Promise = require('bluebird');
 const passport = require('passport');
-
-const mongoURL = process.env.MONGO_URL;
-const connect = mongoose.connect(mongoURL);
+const connect = mongoose.connect(process.env.MONGO_URL);
 
 // Mongoose models
 const Climate = require('./models/climate');
@@ -27,7 +27,7 @@ connect.then(() => {
   console.log("Database-Server connection established");
 
   // climate data document to be archived every 15 minutes
-  addToClimateArchive = setInterval(() => {
+  const addToClimateArchive = setInterval(() => {
     Climate.findOne({}).sort({_id: -1}).limit(1)
       .then(record => {
         if (record.archive) {
@@ -49,7 +49,7 @@ connect.then(() => {
   }, (15 * 60 * 1000));
   // clean all climate documents that have not been selected for archiving in
   // addToClimateArchive method - cleans every 24 hours
-  cleanClimateArchive = setInterval(() => {
+  const cleanClimateArchive = setInterval(() => {
     Climate.deleteMany({archive: false})
       .then(records => {
         console.log("Cleaning non-archived documents", records);
@@ -60,25 +60,19 @@ connect.then(() => {
 
 const app = express();
 
-// if request is http, redirect to secure server
-app.all('*', (req, res, next) => {
-  if (req.secure) return next();
-  else res.redirect(307, `https://${req.hostname}:${app.get('secPort')}${req.url}`);
-});
-
 app.use(logger('dev'));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(passport.initialize());
 
 // REST user api route - login required to access further routes
-app.use('/users', users);
+app.use(`/${api_version}/users`, users);
 
 app.use(express.static(path.join(__dirname, 'public')));
 
 // REST api routes
-app.use('/climate', climateRouter);
-app.use('/garagedoor', garageDoorRouter);
+app.use(`/${api_version}/climate`, climateRouter);
+app.use(`/${api_version}/garagedoor`, garageDoorRouter);
 
 // catch 404 and forward error handler
 app.use((req, res, next) => {
