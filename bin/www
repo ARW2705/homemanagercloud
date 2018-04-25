@@ -8,6 +8,7 @@
 
 const app = require('../app');
 const debug = require('debug')('homemanagercloud:server');
+const fs = require('fs');
 const http = require('http');
 const https = require('https');
 const socketioJwt = require('socketio-jwt');
@@ -16,8 +17,6 @@ const TOKEN_KEY = process.env.TOKEN_KEY;
 // Get port from environment and store in Express.
 
 const port = normalizePort(process.env.PORT || '3000');
-const host = process.env.HOST || '0.0.0.0'; // TODO remove or for prod
-app.set('host', host);
 app.set('port', port);
 app.set('httpsPort', port+443);
 app.set('wssPort', port+810);
@@ -25,8 +24,8 @@ app.set('wssPort', port+810);
 // Create HTTP server.
 
 const server = http.createServer(app);
-server.listen(app.get('port'), app.get('host'), () => {
-  console.log(`http server listening on ${app.get('host')}:${app.get('port')}`);
+server.listen(app.get('port'), () => {
+  console.log(`http server listening on port ${app.get('port')}`);
 });
 server.on('error', onError);
 server.on('listening', onListening);
@@ -34,23 +33,25 @@ server.on('listening', onListening);
 // Set options for secure communication
 
 const options = {
-  key: process.env.PRIVATE_KEY,
-  cert: process.env.CERTIFICATE
+  cert: fs.readFileSync('/etc/letsencrypt/live/andrew-wanex.com/fullchain.pem'),
+  key: fs.readFileSync('/etc/letsencrypt/live/andrew-wanex.com/privkey.pem')
 };
 
 // Create HTTPS server
 
 const httpsServer = https.createServer(options, app);
-secureServer.listen(app.get('httpsPort'), app.get('host'), () => {
-  console.log(`https server listening on ${app.get('host')}:${app.get('httpsPort')}`);
+httpsServer.listen(app.get('httpsPort'), () => {
+  console.log(`https server listening on port ${app.get('httpsPort')}`);
 });
-secureServer.on('error', onError);
-secureServer.on('listening', onListening);
+httpsServer.on('error', onError);
+httpsServer.on('listening', onListening);
 
 // Create WSS server
 
 const wssServer = https.createServer(options, app);
 const io = require('socket.io')(wssServer);
+
+io.origins('*:*');
 
 // wss authentication
 
@@ -64,8 +65,8 @@ io.set('authorization', socketioJwt.authorize({
 require('../routes/climateSocket')(io);
 require('../routes/garageDoorSocket')(io);
 
-wssServer.listen(app.get('wssPort'), app.get('host'), () => {
-  console.log(`wss server listening on ${app.get('host')}:${app.get('wssPort')}`);
+wssServer.listen(app.get('wssPort'), () => {
+  console.log(`wss server listening on port ${app.get('wssPort')}`);
 });
 
 // Normalize a port into a number, string, or false.
