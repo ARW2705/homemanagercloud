@@ -11,6 +11,7 @@ const userRouter = express.Router();
 
 userRouter.use(bodyParser.json());
 
+// validate jwt with server using passport
 userRouter.route('/checkJWTToken')
   .get((req, res) => {
     passport.authenticate('jwt', {session: false}, (err, user, data) => {
@@ -29,6 +30,31 @@ userRouter.route('/checkJWTToken')
     })(req, res);
   });
 
+// login with passport jwt authentication
+userRouter.route('/login')
+  .post((req, res, next) => {
+    passport.authenticate('local', (err, user, data) => {
+      if (err) {
+        return next(err);
+      }
+      if (!user) {
+        res.statusCode = 401;
+        res.setHeader('Content-Type', 'application/json');
+        res.json({success: false, status: 'Login Unsuccessful', err: data});
+      }
+      req.logIn(user, err => {
+        if (err) {
+          return next(err);
+        }
+        const token = authenticate.getToken({_id: req.user._id});
+        res.statusCode = 200;
+        res.setHeader('Content-Type', 'application/json');
+        res.json({success: true, token: token, status: 'Successfully logged in'});
+      });
+    })(req, res, next);
+  });
+
+// create user in db - admin/system not accessible with this route
 userRouter.route('/signup')
   .post((req, res, next) => {
     console.log('signup');
@@ -63,29 +89,6 @@ userRouter.route('/signup')
           });
         }
       });
-  });
-
-userRouter.route('/login')
-  .post((req, res, next) => {
-    passport.authenticate('local', (err, user, data) => {
-      if (err) {
-        return next(err);
-      }
-      if (!user) {
-        res.statusCode = 401;
-        res.setHeader('Content-Type', 'application/json');
-        res.json({success: false, status: 'Login Unsuccessful', err: data});
-      }
-      req.logIn(user, err => {
-        if (err) {
-          return next(err);
-        }
-        const token = authenticate.getToken({_id: req.user._id});
-        res.statusCode = 200;
-        res.setHeader('Content-Type', 'application/json');
-        res.json({success: true, token: token, status: 'Successfully logged in'});
-      });
-    })(req, res, next);
   });
 
 module.exports = userRouter;
