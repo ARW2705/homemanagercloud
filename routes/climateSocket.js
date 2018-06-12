@@ -12,6 +12,17 @@ const climateSocket = io => {
 
     /* App originated events */
 
+    // ping thermostat to confirm it is connected and functional
+    socket.on('ping-thermostat', _ => {
+      console.log('pinging thermostat');
+      io.emit('ping-thermostat');
+    });
+
+    socket.on('ping-local-node', _ => {
+      console.log('pinging local node');
+      io.emit('ping-local-node');
+    });
+
     // update current climate operation status from app, overrides and
     // deactivates any active program
     socket.on('patch-current-climate-data', update => {
@@ -22,7 +33,7 @@ const climateSocket = io => {
           if (program != null) console.log("Deactivating running program", program.name);
           Climate.findOneAndUpdate({}, {$set: update}, {sort: {$natural: -1}, new: true})
             .then(updated => {
-              console.log('Emitting updated climate data');
+              console.log('Emitting updated climate data', updated);
               io.emit('updated-climate-data', {data: updated});
             }, err => socket.emit('error', {error: err}));
         }, err => socket.emit('error', {error: err}))
@@ -75,7 +86,7 @@ const climateSocket = io => {
                 // send update of climate program to all clients
                 console.log('Climate program has been updated', updated);
                 io.emit('updated-climate-program', {data: updated});
-                io.emit('selected-program', {data: selected});
+                io.emit('selected-program', {data: updated});
               }, err => socket.emit('error', {error: err}))
               .catch(err => socket.emit('error', {error: err}));
           }, err => socket.emit('error', {error: err}))
@@ -107,10 +118,37 @@ const climateSocket = io => {
     });
 
     /* IOT originated events */
+    socket.on('local-node-connection', connection => {
+      console.log(`Local node connection at ${connection.data}`);
+    });
+
+    // emit when thermostat has been verified by the local node and send its
+    // connection time
+    socket.on('thermostat-verified', connection => {
+      console.log(`Thermostat verified at ${connection.connectedAt}`);
+      io.emit('thermostat-verified', connection);
+    });
+
+    socket.on('ping-initial-data', _ => {
+      Climate.find({}).sort({_id: -1}).limit(1)
+        .then(climate => {
+          console.log('Sending requested initial climate values to thermostat');
+          io.emit('initial-climate-data', climate);
+        });
+      ClimatePrograms.find({isActive: true})
+        .then(program => {
+          console.log('Sending requested initial active program values to thermostat');
+          if (!program.length) {
+            io.emit('initial-program-data', {none: true});
+          } else {
+            io.emit('initial-program-data', program);
+          }
+        });
+    })
 
     // receive new climate data from thermostat
     socket.on('post-current-climate-data', data => {
-      console.log("current climate data");
+      console.log("current climate data", data);
       Climate.create(data)
         .then(newData => {
           // emit current climate data to all clients
