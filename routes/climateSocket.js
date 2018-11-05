@@ -15,41 +15,40 @@ const climateSocket = io => {
     // ping thermostat to confirm it is connected and functional
     socket.on('ping-thermostat', _ => {
       console.log('pinging thermostat');
-      io.emit('ping-thermostat');
+      io.emit('echo-ping-thermostat');
     });
 
     socket.on('ping-local-node', _ => {
       console.log('pinging local node');
-      io.emit('ping-local-node');
+      io.emit('echo-ping-local-node');
     });
 
-    // update current climate operation status from app, overrides and
-    // deactivates any active program
-    socket.on('patch-current-climate-data', update => {
-      console.log('patch climate data', update);
-      // find active program (if any) and deactivate
-      ClimatePrograms.findOneAndUpdate({isActive: true}, {$set: {isActive: false}}, {new: true})
-        .then(program => {
-          if (program != null) console.log("Deactivating running program", program.name);
-          Climate.findOneAndUpdate({}, {$set: update}, {sort: {$natural: -1}, new: true})
-            .then(updated => {
-              console.log('Emitting updated climate data', updated);
-              io.emit('updated-climate-data', {data: updated});
-            }, err => socket.emit('error', {error: err}));
+    // user is requesting a change to the climate control
+    socket.on('request-patch-current-climate-data', update => {
+      console.log('Request from client, echo climate update to local node');
+      // pass message along to local node
+      io.emit('local-request-patch-current-climate-data', {data: update});
+    });
+
+    // receive new climate data from thermostat
+    socket.on('response-post-current-climate-data', data => {
+      console.log("current climate data", data);
+      Climate.create(data)
+        .then(newData => {
+          // emit current climate data to all clients
+          console.log('Emitting new climate data');
+          io.emit('response-current-climate-data', {data: newData});
         }, err => socket.emit('error', {error: err}))
         .catch(err => socket.emit('error', {error: err}));
     });
-    // post new pre-program to list of programs and emit to all clients
-    socket.on('post-new-program', program => {
-      ClimatePrograms.create(program)
-        .then(newProgram => {
-          // add new climate control program to db and update all app clients
-          console.log('Saved new climate program', newProgram);
-          io.emit('new-climate-program', {data: newProgram});
-          // if set to active, update app and thermostat clients
-          if (newProgram.isActive) {
-            io.emit('selected-program', {data: newProgram});
-          }
+
+    // recieve updated climate data from thermostat
+    socket.on('response-patch-current-climate-data', data => {
+      console.log('updated current climate data', data);
+      Climate.findOneAndUpdate({}, {$set: data}, {sort: {$natural: -1}, new: true})
+        .then(updated => {
+          console.log('Emitting updated climate data');
+          io.emit('response-current-climate-data', {data: updated});
         }, err => socket.emit('error', {error: err}))
         .catch(err => socket.emit('error', {error: err}));
     });
@@ -61,12 +60,12 @@ const climateSocket = io => {
         .then(program => {
           if (id == 0) {
             console.log('No program running');
-            io.emit('selected-program', {data: null});
+            io.emit('local-select-program', {data: null});
           } else {
             ClimatePrograms.findByIdAndUpdate(id, {$set: {isActive: true}}, {new: true})
               .then(selected => {
                 console.log('Selected program:', selected);
-                io.emit('selected-program', {data: selected});
+                io.emit('local-select-program', {data: selected});
               }, err => socket.emit('error', {error: err}))
               .catch(err => socket.emit('error', {error: err}));
           }
@@ -74,8 +73,40 @@ const climateSocket = io => {
         .catch(err => socket.emit('error', {error: err}));
     });
 
+    socket.on('response-select-program', response => {
+      if (response.status === 'ok') {
+        ClimatePrograms.findOne({isActive: true})
+          .then(program => {
+            io.emit('echo-response-select-program', {data: program});
+          }, err => socket.emit('error', {error: err}))
+          .catch(err => socket.emit('error', {error: err}));
+      } else {
+        ClimatePrograms.findOneAndUpdate({isActive: true}, {$set: {isActive: false}}, {new: true})
+          .then(program => {
+            io.emit('echo-response-select-program', {data: null});
+            io.emit('error', {data: response.message});
+          }, err => socket.emit('error', {error: err}))
+          .catch(err => socket.emit('error', {error: err}));
+      }
+    });
+
+    // post new pre-program to list of programs and emit to all clients
+    socket.on('post-new-program', program => {
+      ClimatePrograms.create(program)
+        .then(newProgram => {
+          // add new climate control program to db and update all app clients
+          console.log('Saved new climate program', newProgram);
+          io.emit('echo-post-new-program', {data: newProgram});
+          // if set to active, update app and thermostat clients
+          if (newProgram.isActive) {
+            io.emit('local-select-program', {data: newProgram});
+          }
+        }, err => socket.emit('error', {error: err}))
+        .catch(err => socket.emit('error', {error: err}));
+    });
+
     // update specified program and emit to all clients
-    socket.on('update-specified-program', update => {
+    socket.on('update-program', update => {
       // if updated program was selected to be active, deactivate any running programs
       if (update.isActive) {
         ClimatePrograms.findOneAndUpdate({isActive: true}, {$set: {isActive: false}}, {new: true})
@@ -85,8 +116,8 @@ const climateSocket = io => {
               .then(updated => {
                 // send update of climate program to all clients
                 console.log('Climate program has been updated', updated);
-                io.emit('updated-climate-program', {data: updated});
-                io.emit('selected-program', {data: updated});
+                io.emit('echo-update-climate-program', {data: updated});
+                io.emit('local-select-program', {data: updated});
               }, err => socket.emit('error', {error: err}))
               .catch(err => socket.emit('error', {error: err}));
           }, err => socket.emit('error', {error: err}))
@@ -97,21 +128,21 @@ const climateSocket = io => {
           .then(updated => {
             // send update of climate program to all clients
             console.log('Climate program has been updated', updated);
-            io.emit('updated-climate-program', {data: updated});
+            io.emit('echo-update-climate-program', {data: updated});
           }, err => socket.emit('error', {error: err}))
           .catch(err => socket.emit('error', {error: err}));
         }
     });
 
     // delete program by id and emit notification to all clients
-    socket.on('delete-specified-program', id => {
+    socket.on('delete-program', id => {
       ClimatePrograms.findByIdAndRemove(id)
         .then(dbres => {
           // send notification to all clients
           console.log('Deleting climate program', dbres);
-          io.emit('deleted-climate-program', {data: dbres});
+          io.emit('echo-delete-climate-program', {data: dbres});
           if (dbres.isActive) {
-            io.emit('selected-program', {data: null});
+            io.emit('local-select-program', {data: null});
           }
         }, err => socket.emit('error', {error: err}))
         .catch(err => socket.emit('error', {error: err}));
@@ -119,14 +150,25 @@ const climateSocket = io => {
 
     /* IOT originated events */
     socket.on('local-node-connection', connection => {
-      console.log(`Local node connection at ${connection.data}`);
+      console.log(`Local node connection at ${connection.nodeConnectedAt}`);
+      io.emit('echo-local-node-connection', connection);
+    });
+
+    socket.on('thermostat-connection', datetime => {
+      console.log(`Thermostat connected at ${datetime.connectedAt}`);
+      io.emit('echo-thermostat-connection', datetime);
+    });
+
+    socket.on('thermostat-disconnection', datetime => {
+      console.log(`Thermostat disconnected at ${datetime.lastConnectedAt}`);
+      io.emit('echo-thermostat-disconnection', datetime);
     });
 
     // emit when thermostat has been verified by the local node and send its
     // connection time
     socket.on('thermostat-verified', connection => {
       console.log(`Thermostat verified at ${connection.connectedAt}`);
-      io.emit('thermostat-verified', connection);
+      io.emit('echo-thermostat-verified', connection);
     });
 
     socket.on('ping-initial-data', _ => {
@@ -144,18 +186,6 @@ const climateSocket = io => {
             io.emit('initial-program-data', program);
           }
         });
-    })
-
-    // receive new climate data from thermostat
-    socket.on('post-current-climate-data', data => {
-      console.log("current climate data", data);
-      Climate.create(data)
-        .then(newData => {
-          // emit current climate data to all clients
-          console.log('Emitting new climate data');
-          io.emit('new-climate-data', {data: newData});
-        }, err => socket.emit('error', {error: err}))
-        .catch(err => socket.emit('error', {error: err}));
     });
 
     // client socket disconnect
