@@ -1,6 +1,6 @@
 'use strict';
 
-const socketioStream = require('socketio-stream');
+const socketioStream = require('socket.io-stream');
 const fs = require('fs');
 
 const securitySysSocket = io => {
@@ -9,7 +9,8 @@ const securitySysSocket = io => {
     console.log('Proxy stream connected');
 
     socketioStream(socket).on('proxy-response-stream-video', stream => {
-      stream.pipe(fs.createWriteStream('../tmp/it-worked.h264'));
+      console.log('Caught stream');
+      stream.pipe(fs.createWriteStream('../test/it-worked.h264'));
     });
 
     socket.on('disconnect', () => {
