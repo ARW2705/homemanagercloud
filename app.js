@@ -1,6 +1,6 @@
 'use strict';
 
-const api_version = "api_v1.0.0";
+const api_version = require('./api-version');
 
 const express = require('express');
 const path = require('path');
@@ -10,7 +10,14 @@ const bodyParser = require('body-parser');
 const mongoose = require('mongoose');
 mongoose.Promise = require('bluebird');
 const passport = require('passport');
-const connect = mongoose.connect(process.env.MONGO_URL);
+const seccamCachePath = path.join(__dirname, '/cache');
+const connect = mongoose.connect(
+  process.env.MONGO_URL,
+  {
+    keepAlive: true,
+    keepAliveInitialDelay: 300000
+  }
+);
 
 // Mongoose models
 const Climate = require('./models/climate');
@@ -19,7 +26,8 @@ const ClimateProgram = require('./models/climateprogram');
 // REST routes
 const users = require('./routes/users');
 const climateRouter = require('./routes/climateRouter');
-const garageDoorRouter = require("./routes/garageDoorRouter");
+const garageDoorRouter = require('./routes/garageDoorRouter');
+const securityRouter = require('./routes/securitySysRouter');
 
 // MongoDB connection
 connect.then(() => {
@@ -73,6 +81,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 // REST api routes
 app.use(`/${api_version}/climate`, climateRouter);
 app.use(`/${api_version}/garagedoor`, garageDoorRouter);
+app.use(`/${api_version}/security`, securityRouter);
 
 // catch 404 and forward error handler
 app.use((req, res, next) => {

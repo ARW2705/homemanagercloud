@@ -49,7 +49,9 @@ httpsServer.on('listening', onListening);
 // Create WSS server
 
 const wssServer = https.createServer(options, app);
-const io = require('socket.io')(wssServer);
+const io = require('socket.io')(wssServer, {'pingInterval': 25000, 'pingTimeout': 5000});
+
+exports.socketio = io;
 
 io.origins('*:*');
 
@@ -64,6 +66,7 @@ io.set('authorization', socketioJwt.authorize({
 
 require('../routes/climateSocket')(io);
 require('../routes/garageDoorSocket')(io);
+require('../routes/securitySysSocket')(io);
 
 wssServer.listen(app.get('wssPort'), () => {
   console.log(`wss server listening on port ${app.get('wssPort')}`);

@@ -13,6 +13,7 @@ exports.local = passport.use(new LocalStrategy(User.authenticate()));
 passport.serializeUser(User.serializeUser());
 passport.deserializeUser(User.deserializeUser());
 
+// Create new json webtoken
 exports.getToken = user => {
   return jwt.sign(user, TOKEN_KEY, {expiresIn: '30d'});
 };
@@ -21,6 +22,7 @@ const opts = {};
 opts.jwtFromRequest = ExtractJwt.fromAuthHeaderAsBearerToken();
 opts.secretOrKey = TOKEN_KEY;
 
+// Use passport's json webtoken verification strategy and verify webtoken
 exports.jwtPassport = passport.use(new JwtStrategy(opts, (jwt_payload, done) => {
   console.log("JWT payload", jwt_payload);
   User.findOne({_id: jwt_payload._id}, (err, user) => {
@@ -35,6 +37,26 @@ exports.jwtPassport = passport.use(new JwtStrategy(opts, (jwt_payload, done) => 
 }));
 
 exports.verifyUser = passport.authenticate('jwt', {session: false});
+
+const vidOpts = {};
+vidOpts.jwtFromRequest = ExtractJwt.fromUrlQueryParameter('vidauth');
+vidOpts.secretOrKey = TOKEN_KEY;
+
+// Use passport's json webtoken verification strategy and verify webtoken
+exports.jwtPassportVid = passport.use('vidauth', new JwtStrategy(vidOpts, (jwt_payload, done) => {
+  console.log("JWT payload", jwt_payload);
+  User.findOne({_id: jwt_payload._id}, (err, user) => {
+    if (err) {
+      return done(err, false);
+    } else if (user) {
+      return done(null, user);
+    } else {
+      return done(null, false);
+    }
+  });
+}));
+
+exports.verifyVid = passport.authenticate('vidauth', {session: false});
 
 exports.verifyAdmin = (req, res, next) => {
   if (req.user.admin || req.user.system) {
