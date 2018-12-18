@@ -20,6 +20,8 @@ const zoneDataSchema = new Schema({
     type: String,
     required: true
   }
+}, {
+  timestamps: true
 });
 
 const climateSchema = new Schema({

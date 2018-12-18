@@ -8,7 +8,7 @@ const doorId = process.env.GARAGE_DOOR_ID;
 const garageDoorSocket = io => {
 
   io.on('connection', socket => {
-    console.log('Client connected to garage door socket', socket.id);
+    console.log('Client connected to garage door socket');
 
     // garage door operation requested
     socket.on('operate-garage-door', status => {
@@ -22,7 +22,7 @@ const garageDoorSocket = io => {
 
     // client socket disconnect
     socket.on('disconnect', () => {
-      console.log('Secure client disconnected from climate socket', socket.id);
+      console.log('Secure client disconnected from climate socket');
     });
 
   });

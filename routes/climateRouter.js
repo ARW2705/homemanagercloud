@@ -17,6 +17,7 @@ climateRouter.route('/')
     // get current climate data for app and thermostat clients
     Climate.find({}).sort({_id: -1}).limit(1)
       .then(climate => {
+        console.log('get climate', climate);
         res.statusCode = 200;
         res.setHeader('Content-Type', 'application/json');
         const tstatPayload = {};
@@ -28,7 +29,7 @@ climateRouter.route('/')
           tstatPayload.targetTemperature = climate[0].targetTemperature;
           res.json(tstatPayload);
         } else {
-        res.json(climate[0]);
+          res.json(climate[0]);
         }
       }, err => next(err))
       .catch(err => next(err));
