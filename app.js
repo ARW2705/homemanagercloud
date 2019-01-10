@@ -55,6 +55,7 @@ connect.then(() => {
         }
       }, err => console.log(err));
   }, (15 * 60 * 1000));
+
   // clean all climate documents that have not been selected for archiving in
   // addToClimateArchive method - cleans every 24 hours
   const cleanClimateArchive = setInterval(() => {
