@@ -35,7 +35,7 @@ const generateDateTimeData = () => {
         return Promise.resolve({
           start: new Date(start),
           end: new Date(end),
-          duration: duration;
+          duration: duration
         });
       })
       .catch(err => {
