@@ -43,7 +43,7 @@ vidOpts.jwtFromRequest = ExtractJwt.fromUrlQueryParameter('vidauth');
 vidOpts.secretOrKey = TOKEN_KEY;
 
 // Use passport's json webtoken verification strategy and verify webtoken
-exports.jwtPassportVid = passport.use('vidauth', new JwtStrategy(vidOpts, (jwt_payload, done) => {
+exports.jwtPassportVideo = passport.use('vidauth', new JwtStrategy(vidOpts, (jwt_payload, done) => {
   console.log("JWT payload", jwt_payload);
   User.findOne({_id: jwt_payload._id}, (err, user) => {
     if (err) {
@@ -56,7 +56,7 @@ exports.jwtPassportVid = passport.use('vidauth', new JwtStrategy(vidOpts, (jwt_p
   });
 }));
 
-exports.verifyVid = passport.authenticate('vidauth', {session: false});
+exports.verifyVideo = passport.authenticate('vidauth', {session: false});
 
 exports.verifyAdmin = (req, res, next) => {
   if (req.user.admin || req.user.system) {
