@@ -47,7 +47,7 @@ const securitySysSocket = io => {
     });
 
     socket.on('proxy-response-new-video-trigger-event', data => {
-      console.log('seccam triggered', data.triggereEvent);
+      console.log('seccam triggered', data.triggerEvent);
       if (uploadTracker.getTrigger() == '') {
         uploadTracker.setTrigger(data.triggerEvent);
       } else {

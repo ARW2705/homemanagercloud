@@ -65,7 +65,7 @@ secSysRouter.route('/seccam')
 
       conversionStream
         .on('end', () => {
-          generateDatetimeData()
+          generateDateTimeData()
             .then(dt => {
               SeccamVideo.create({
                 filename: uploadTracker.getFilename(),
