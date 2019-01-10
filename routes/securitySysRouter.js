@@ -26,7 +26,7 @@ const videoDir = path.join(__dirname, '../../assets/videos/seccam/location/front
 const generateDateTimeData = () => {
   const base = uploadTracker.getFilename();
   return new Promise((resolve, reject) => {
-    ffprobe(`${videoDir}/${base}.mp4`, {path: ffprobeStatic.path})
+    return ffprobe(`${videoDir}/${base}.mp4`, {path: ffprobeStatic.path})
       .then(info => {
         console.log(info);
         const duration = info.streams[0].duration;
