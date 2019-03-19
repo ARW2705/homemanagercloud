@@ -4,7 +4,11 @@ const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
 const zoneDataSchema = new Schema({
-  locationId: {
+  id: {
+    type: Number,
+    required: true
+  },
+  deviceId: {
     type: Number,
     required: true
   },
@@ -13,24 +17,21 @@ const zoneDataSchema = new Schema({
     required: true
   },
   humidity: {
-    type: Number,
-    required: true
+    type: Number
   },
   locationName: {
     type: String,
     required: true
   }
-}, {
-  timestamps: true
 });
 
 const climateSchema = new Schema({
   zoneData: [zoneDataSchema],
-  selectedMode: {
+  setMode: {
     type: String,
     required: true
   },
-  selectedZone: {
+  setZone: {
     type: Number,
     default: 0
   },
@@ -38,9 +39,17 @@ const climateSchema = new Schema({
     type: String,
     required: true
   },
-  targetTemperature: {
+  setTemperature: {
     type: Number,
     required: true
+  },
+  sleep: {
+    type: Boolean,
+    required: true
+  },
+  storedProgram: {
+    type: String,
+    default: ''
   },
   archive: {
     type: Boolean,
