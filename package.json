@@ -17,7 +17,7 @@
     "ffprobe": "^1.1.0",
     "ffprobe-static": "^3.0.0",
     "fluent-ffmpeg": "^2.1.2",
-    "jsonwebtoken": "^8.2.1",
+    "jsonwebtoken": "^9.0.0",
     "mongodb": "^3.0.5",
     "mongoose": "^5.6.4",
     "morgan": "^1.9.1",
